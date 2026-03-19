@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RAG PDF QA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f0f4ff;
+      color: #1a1a2e;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 20px;
+    }
+
+    .top-bar {
+      width: 100%;
+      max-width: 640px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 60px;
+    }
+
+    .logo {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+      color: #1a1a2e;
+    }
+
+    .logo span {
+      background: #2563eb;
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-left: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .tag {
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 400;
+    }
+
+    .hero {
+      width: 100%;
+      max-width: 640px;
+      margin-bottom: 48px;
+    }
+
+    .hero h1 {
+      font-size: clamp(28px, 5vw, 42px);
+      font-weight: 300;
+      letter-spacing: -1.5px;
+      line-height: 1.15;
+      color: #1a1a2e;
+      margin-bottom: 12px;
+    }
+
+    .hero h1 strong {
+      font-weight: 600;
+      color: #2563eb;
+    }
+
+    .hero p {
+      font-size: 15px;
+      color: #6b7280;
+      font-weight: 400;
+      line-height: 1.6;
+    }
+
+    .divider {
+      width: 100%;
+      max-width: 640px;
+      height: 1px;
+      background: #dbe4ff;
+      margin-bottom: 40px;
+    }
+
+    .section {
+      width: 100%;
+      max-width: 640px;
+      margin-bottom: 32px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #2563eb;
+      margin-bottom: 12px;
+    }
+
+    .upload-zone {
+      border: 1.5px dashed #bfdbfe;
+      border-radius: 12px;
+      padding: 40px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      background: #fff;
+    }
+
+    .upload-zone:hover {
+      border-color: #2563eb;
+      background: #f8faff;
+    }
+
+    .upload-zone input { display: none; }
+
+    .upload-icon {
+      width: 44px;
+      height: 44px;
+      background: #dbeafe;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 14px;
+      font-size: 20px;
+    }
+
+    .upload-zone h3 {
+      font-size: 14px;
+      font-weight: 500;
+      color: #1a1a2e;
+      margin-bottom: 4px;
+    }
+
+    .upload-zone p {
+      font-size: 13px;
+      color: #9ca3af;
+    }
+
+    .upload-zone p span {
+      color: #2563eb;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .status {
+      margin-top: 12px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      display: none;
+    }
+
+    .status.success {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+
+    .status.error {
+      background: #fff5f5;
+      color: #c0392b;
+      border: 1px solid #f5c6c6;
+    }
+
+    .input-wrap {
+      background: #fff;
+      border: 1.5px solid #dbe4ff;
+      border-radius: 12px;
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      padding: 14px 14px 14px 18px;
+      transition: border-color 0.2s;
+    }
+
+    .input-wrap:focus-within {
+      border-color: #2563eb;
+    }
+
+    .input-wrap textarea {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: #1a1a2e;
+      resize: none;
+      min-height: 48px;
+      max-height: 160px;
+      line-height: 1.6;
+      padding: 0;
+    }
+
+    .input-wrap textarea::placeholder { color: #bbb; }
+
+    .send-btn {
+      width: 36px;
+      height: 36px;
+      background: #2563eb;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+
+    .send-btn:hover { background: #1d4ed8; }
+    .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .send-btn svg {
+      width: 16px;
+      height: 16px;
+      fill: #fff;
+    }
+
+    .answer-wrap {
+      display: none;
+      margin-top: 20px;
+    }
+
+    .answer-meta {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #2563eb;
+      margin-bottom: 10px;
+    }
+
+    .answer-card {
+      background: #fff;
+      border: 1.5px solid #dbe4ff;
+      border-left: 3px solid #2563eb;
+      border-radius: 12px;
+      padding: 20px 22px;
+      font-size: 14px;
+      line-height: 1.75;
+      color: #1a1a2e;
+    }
+
+    .answer-card.error {
+      background: #fff5f5;
+      border-color: #f5c6c6;
+      border-left-color: #c0392b;
+      color: #c0392b;
+    }
+
+    .thinking {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 0;
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .thinking.show { display: flex; }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      background: #2563eb;
+      border-radius: 50%;
+      animation: pulse 1.2s infinite;
+    }
+
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes pulse {
+      0%, 80%, 100% { transform: scale(1); opacity: 0.3; }
+      40% { transform: scale(1.4); opacity: 1; }
+    }
+
+    .footer {
+      margin-top: 60px;
+      font-size: 12px;
+      color: #9ca3af;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <div class="logo">RAG <span>PDF QA</span></div>
+    <div class="tag">No external API · Runs locally</div>
+  </div>
+
+  <div class="hero">
+    <h1>Ask anything about<br><strong>your document.</strong></h1>
+    <p>Upload a PDF and get instant answers extracted directly from its content.</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-label">01 — Upload</div>
+    <div class="upload-zone" onclick="document.getElementById('pdfInput').click()">
+      <input type="file" id="pdfInput" accept=".pdf" onchange="uploadPDF(this)"/>
+      <div class="upload-icon">📄</div>
+      <h3>Drop your PDF here</h3>
+      <p>or <span>browse file</span> to upload</p>
+    </div>
+    <div class="status" id="statusBar"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">02 — Ask</div>
+    <div class="input-wrap">
+      <textarea
+        id="question"
+        placeholder="What would you like to know?"
+        rows="2"
+        onkeydown="handleKey(event)"
+      ></textarea>
+      <button class="send-btn" id="askBtn" onclick="askQuestion()">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="thinking" id="thinking">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      Searching document...
+    </div>
+
+    <div class="answer-wrap" id="answerWrap">
+      <div class="answer-meta">Answer</div>
+      <div class="answer-card" id="answerCard"></div>
+    </div>
+  </div>
+
+  <div class="footer">RAG SYSTEM · FLASK · PYPDF2 · localhost:5000</div>
+
+  <script>
+    async function uploadPDF(input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      const status = document.getElementById("statusBar");
+      status.style.display = "block";
+      status.className = "status";
+      status.textContent = "Processing PDF...";
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const res = await fetch("http://localhost:5000/upload", {
+          method: "POST",
+          body: formData
+        });
+        const data = await res.json();
+        if (res.ok) {
+          status.className = "status success";
+          status.textContent = "✓ " + file.name + " uploaded — " + data.total_chunks + " sections indexed.";
+        } else {
+          status.className = "status error";
+          status.textContent = "✗ " + data.error;
+        }
+      } catch (err) {
+        status.className = "status error";
+        status.textContent = "✗ Could not connect to backend. Make sure Flask is running.";
+      }
+    }
+
+    async function askQuestion() {
+      const question = document.getElementById("question").value.trim();
+      if (!question) return;
+
+      const btn = document.getElementById("askBtn");
+      const thinking = document.getElementById("thinking");
+      const answerWrap = document.getElementById("answerWrap");
+      const answerCard = document.getElementById("answerCard");
+
+      btn.disabled = true;
+      thinking.classList.add("show");
+      answerWrap.style.display = "none";
+
+      try {
+        const res = await fetch("http://localhost:5000/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question })
+        });
+        const data = await res.json();
+
+        answerWrap.style.display = "block";
+        if (res.ok) {
+          answerCard.className = "answer-card";
+          answerCard.textContent = data.answer;
+        } else {
+          answerCard.className = "answer-card error";
+          answerCard.textContent = data.error;
+        }
+      } catch (err) {
+        answerWrap.style.display = "block";
+        answerCard.className = "answer-card error";
+        answerCard.textContent = "Could not connect to backend. Make sure Flask is running.";
+      }
+
+      thinking.classList.remove("show");
+      btn.disabled = false;
+    }
+
+    function handleKey(e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        askQuestion();
+      }
+    }
+  </script>
+</body>
+</html>
